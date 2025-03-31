@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: image-resize-db
+    image: mysql:8.0
+    platform: linux/x86_64
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: image_resize_db
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Backend service
+  backend:
+    container_name: image-processing-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: image-backend
+    restart: unless-stopped
+    ports:
+      - "7070:7070"
+    volumes:
+      - ./uploads:/resize/uploads
+      - ./resized:/resize/resized
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # App service
+  app:
+    container_name: image-resize-app
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: image-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Resizer</title>
+</head>
+<body>
+<h2>Upload an Image to Resize</h2>
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="file" name="file" required><br><br>
+    Width: <input type="number" id="width" name="width"><br>
+    Height: <input type="number" id="height" name="height"><br>
+    New Name: <input type="text" id="name" name="name"><br><br>
+    <button type="button" onclick="uploadImage()">Upload</button>
+</form>
+
+<h3 id="result"></h3>
+
+<script>
+    async function uploadImage() {
+        const formData = new FormData(document.getElementById("uploadForm"));
+        const response = await fetch("/api/images/upload", {
+            method: "POST",
+            body: formData
+        });
+        const result = await response.text();
+        document.getElementById("result").innerText = "Resized Image Path: " + result;
+    }
+</script>
+</body>
+</html>
