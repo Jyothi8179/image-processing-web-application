@@ -33,7 +33,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.image.processing.ImageProcessingService</mainClass>
+                    <mainClass>com.image.resize.ImageProcessingService</mainClass>
                 </configuration>
             </plugin>
         </plugins>

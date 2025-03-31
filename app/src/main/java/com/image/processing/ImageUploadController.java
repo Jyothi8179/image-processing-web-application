@@ -1,4 +1,4 @@
-package com.image.processing.resize;
+package com.image.processing;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,8 +17,8 @@ import java.io.IOException;
 public class ImageUploadController {
 
     private static final long MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
-    // private static final String UPLOAD_DIR = "/app/uploaded_images"; // No trailing slash
-    private static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "/app/uploaded_images";
+    // private static final String UPLOAD_DIR = "/resize/uploads"; // No trailing slash
+    private static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "/resize/uploads";
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadImage(

@@ -22,7 +22,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.image.processing.processing.ResizeWebApplication</mainClass>
+                    <mainClass>com.image.processing.ResizeWebApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
