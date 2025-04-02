@@ -16,6 +16,7 @@ import jakarta.validation.constraints.Min;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -27,6 +28,7 @@ public class ImageUploadController {
     private static final long MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
     // private static final String UPLOAD_DIR = "/resize/uploads"; // No trailing slash
     private static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
+    private static final String RESIZED_FILE_DIR = System.getProperty("user.dir") + File.separator + "resized";;
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadImage(
@@ -69,7 +71,7 @@ public class ImageUploadController {
     public ResponseEntity<Resource> downloadImage(@RequestParam("resizedFileName") String resizedFileName) {
         try {
             // Construct the file path
-            Path filePath = Paths.get(UPLOAD_DIR).resolve(resizedFileName).normalize();
+            Path filePath = Paths.get(RESIZED_FILE_DIR).resolve(resizedFileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             // Check if the file exists and is readable
@@ -79,12 +81,6 @@ public class ImageUploadController {
 
             // Determine file type (e.g., image/png, image/jpeg)
             String contentType = "application/octet-stream"; // Default
-            if (resizedFileName.endsWith(".png")) {
-                contentType = "image/png";
-            } else if (resizedFileName.endsWith(".jpg") || resizedFileName.endsWith(".jpeg")) {
-                contentType = "image/jpeg";
-            }
-
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resizedFileName + "\"")
