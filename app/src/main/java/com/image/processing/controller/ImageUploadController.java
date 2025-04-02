@@ -1,5 +1,9 @@
 package com.image.processing.controller;
 
+import com.image.processing.entity.Image;
+import com.image.processing.service.ImageService;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -25,13 +29,28 @@ import java.nio.file.Paths;
 @Validated
 public class ImageUploadController {
 
-    private static final long MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+    @Autowired ImageService imageService;
+    private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
     // private static final String UPLOAD_DIR = "/resize/uploads"; // No trailing slash
-    private static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
-    private static final String RESIZED_FILE_DIR = System.getProperty("user.dir") + File.separator + "resized";;
+    public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
+    public static final String RESIZED_FILE_DIR = System.getProperty("user.dir") + File.separator + "resized";;
+
+    // This will run at application restart
+    @PostConstruct
+    public void createTempDirectory() throws Exception {
+        File directory = new File(UPLOAD_DIR);
+        if (!directory.exists()) {
+            // Create directory if it doesn't exist
+            boolean created = directory.mkdirs();
+            if (!created) {
+                throw new Exception("Failed to create upload directory.");
+            }
+        }
+    }
+
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadImage(
+    public ResponseEntity<?> uploadImage(
             @RequestParam("image") MultipartFile file,
             @RequestParam("width") @Min(1) int width,
             @RequestParam("height") @Min(1) int height,
@@ -47,19 +66,10 @@ public class ImageUploadController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only image files are allowed.");
             }
 
-            File directory = new File(UPLOAD_DIR);
-            if (!directory.exists()) {
-                boolean created = directory.mkdirs(); // Create directory if it doesn't exist
-                if (!created) {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Failed to create upload directory.");
-                }
-            }
-
-            String filePath = UPLOAD_DIR + File.separator + file.getOriginalFilename(); // Use File.separator for cross-platform compatibility
-            file.transferTo(new File(filePath));
-
-            return ResponseEntity.ok("Image uploaded successfully: " + filePath);
+            // Saving image for temporary use in local storage
+            // Further we can store image in separate storage
+            Image savedImage = imageService.saveImage(file,resizedFileName);
+            return ResponseEntity.ok(savedImage);
 
         } catch (IOException e) {
             e.printStackTrace();

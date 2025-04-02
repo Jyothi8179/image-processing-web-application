@@ -20,25 +20,39 @@ services:
       - mysql_data:/var/lib/mysql
 
   # Backend service
-  backend:
-    container_name: image-processing-backend
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: image-backend
-    restart: unless-stopped
-    ports:
-      - "7070:7070"
-    volumes:
-      - ./uploads:/resize/uploads
-      - ./resized:/resize/resized
+#  backend:
+#    container_name: image-processing-backend
+#    build:
+#      context: ./backend
+#      dockerfile: Dockerfile
+#    image: image-backend
+#    restart: unless-stopped
+#    ports:
+#      - "7070:7070"
+#    volumes:
+#      - ./uploads:/resize/uploads
+#      - ./resized:/resize/resized
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
+#      SPRING_DATASOURCE_USERNAME: root
+#      SPRING_DATASOURCE_PASSWORD: root
+#    depends_on:
+#      db:
+#        condition: service_healthy
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    platform: linux/x86_64
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      UPLOAD_LIMIT: 512M
+    restart: unless-stopped
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+    ports:
+      - 8088:80
 
   # App service
   app:
@@ -54,6 +68,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 25MB
+      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 30MB
+
     depends_on:
       db:
         condition: service_healthy
