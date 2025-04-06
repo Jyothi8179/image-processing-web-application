@@ -5,7 +5,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy the application JAR to the container
-COPY app/target/app-0.0.1-SNAPSHOT.jar app.jar
+COPY app/target/app-0.0.1-SNAPSHOT.jar app_v1.jar
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app_v1.jar"]
