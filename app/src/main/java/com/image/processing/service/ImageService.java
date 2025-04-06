@@ -18,6 +18,10 @@ public class ImageService {
     @Autowired ImageRepository imageRepository;
 
     public Image saveImage(MultipartFile file, String resizedFileName) throws IOException {
+
+        if(resizedFileName==null){
+            resizedFileName = "resized";
+        }
         // Ensure the upload directory exists
         File directory = new File(UPLOAD_DIR);
         if (!directory.exists()) {
@@ -32,7 +36,7 @@ public class ImageService {
         Image image = new Image();
         image.setName(file.getOriginalFilename());
         image.setImageSize(file.getSize());
-        image.setResizedImageName(String.valueOf(file.getOriginalFilename().split(".")[0])+"_"+resizedFileName);
+        image.setResizedImageName(file.getOriginalFilename().split("\\.")[0]+"_"+resizedFileName);
         image.setResizedStatus(false); // Initially set to false until resized
 
         return imageRepository.save(image);
