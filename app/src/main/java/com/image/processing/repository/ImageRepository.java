@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface ImageRepository extends JpaRepository<Image, Long> {
 
 
+    Boolean getResizedStatusById(Long id);
 }

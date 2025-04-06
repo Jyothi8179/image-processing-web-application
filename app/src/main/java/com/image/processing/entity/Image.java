@@ -50,12 +50,50 @@ public class Image {
         this.resizedStatus = resizedStatus;
     }
 
+    public String getOriginalFilePath() {
+        return originalFilePath;
+    }
+
+    public void setOriginalFilePath(String originalFilePath) {
+        this.originalFilePath = originalFilePath;
+    }
+
+    public Integer getWidth() {
+        return width;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public String getResizedFilePath() {
+        return resizedFilePath;
+    }
+
+    public void setResizedFilePath(String resizedFilePath) {
+        this.resizedFilePath = resizedFilePath;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(name = "name")
     private String name;
+
+    @Column(name="width")
+    private Integer width;
+
+    @Column(name="height")
+    private Integer height;
 
     @Column(name = "imageSize")
     private Long imageSize;
@@ -65,5 +103,11 @@ public class Image {
 
     @Column(name = "resizedStatus")
     private Boolean resizedStatus;
+
+    @Column(name = "originalFilePath")
+    private String originalFilePath;
+
+    @Column(name = "resizedFilePath")
+    private String resizedFilePath;
 
 }

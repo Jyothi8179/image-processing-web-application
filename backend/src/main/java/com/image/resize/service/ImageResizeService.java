@@ -1,35 +1,34 @@
 package com.image.resize.service;
 
-import org.apache.commons.io.FileUtils;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStreamReader;
 
 
 @Service
 public class ImageResizeService {
+    public static final String RESIZED_FILE_DIR = System.getProperty("user.dir") + File.separator + "resized";
 
 
-    static {
-        try{
-            byte[] res = resizeImage("test.jpeg", 1080,720, "resized.jpeg");
-            System.out.println(res);
-
-        }catch (Exception e){
-            e.printStackTrace();
-            System.out.println(e.getCause());
-            System.out.println(e.getMessage());
-
+    // This will run at application restart
+    @PostConstruct
+    public void createTempDirectory() throws Exception {
+        File directory = new File(RESIZED_FILE_DIR);
+        if (!directory.exists()) {
+            // Create directory if it doesn't exist
+            boolean created = directory.mkdirs();
+            if (!created) {
+                throw new Exception("Failed to create upload directory.");
+            }
         }
     }
 
-    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
-    private static final String RESIZED_DIR = System.getProperty("user.dir") + "/resized/";
 
-    public static byte[] resizeImage(String originalFileName, int width, int height, String outputName) throws IOException {
+    public String resizeImage(String originalImagePath, int width, int height, String resizeImageName) throws IOException {
         // Ensure output directory exists
 
         System.out.println("<==>");
@@ -37,26 +36,38 @@ public class ImageResizeService {
         if (!resizedFolder.exists()) {
             resizedFolder.mkdirs();
         }
-
+        System.out.println("Original image path : "+ originalImagePath);
         // Original file path
-        String originalFilePath = "/resize/uploads/" + originalFileName;
-        File originalFile = new File(originalFilePath);
+        File originalFile = new File(originalImagePath);
+        String originalFileName = originalFile.getName();
 
         // Check if the file exists
         if (!originalFile.exists()) {
-            System.out.println("File not found: " + originalFilePath);
-            throw new IOException("File not found: " + originalFilePath);
+            System.out.println("File not found: " + originalFileName);
+            throw new IOException("File not found: " + originalFileName);
         }
 
         // Define resized image file name
-        String resizedFileName = (outputName != null) ? outputName : "resized_" + originalFileName;
-        String resizedFilePath = "/resize/resized/" + resizedFileName;
+        String resizedFileName = (resizeImageName != null) ? resizeImageName : "resized_" + originalFileName;
+        String resizedFilePath = RESIZED_FILE_DIR + File.separator +resizedFileName;
+        System.out.println("Resized file path : "+ resizedFilePath);
 
         // Run ImageMagick command to resize the image
-        String command = String.format("convert %s -resize %dx%d %s",
-                originalFilePath, width, height, resizedFilePath);
+        String command = String.format("magick %s -resize %dx%d %s",
+               originalImagePath,
+                width,
+                height,
+                resizedFilePath);
 
         Process process = Runtime.getRuntime().exec(command);
+
+        try (BufferedReader errorReader = new BufferedReader(
+                new InputStreamReader(process.getErrorStream()))) {
+            String line;
+            while ((line = errorReader.readLine()) != null) {
+                System.err.println("ImageMagick Error: " + line);
+            }
+        }
         try {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
@@ -67,14 +78,6 @@ public class ImageResizeService {
             throw new IOException("Image resizing interrupted", e);
         }
 
-        // Read and return resized image as byte array
-        byte[] resizedImage = FileUtils.readFileToByteArray(new File(resizedFilePath));
-
-        // Clean up temporary resized file
-        Files.deleteIfExists(Path.of(resizedFilePath));
-
-        return resizedImage;
+        return resizedFilePath;
     }
-
-
 }

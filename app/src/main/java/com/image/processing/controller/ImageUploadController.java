@@ -2,6 +2,7 @@ package com.image.processing.controller;
 
 import com.image.processing.entity.Image;
 import com.image.processing.service.ImageService;
+
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
@@ -15,12 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Min;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -30,10 +30,9 @@ import java.nio.file.Paths;
 public class ImageUploadController {
 
     @Autowired ImageService imageService;
+
     private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
-    // private static final String UPLOAD_DIR = "/resize/uploads"; // No trailing slash
     public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
-    public static final String RESIZED_FILE_DIR = System.getProperty("user.dir") + File.separator + "resized";;
 
     // This will run at application restart
     @PostConstruct
@@ -68,7 +67,11 @@ public class ImageUploadController {
 
             // Saving image for temporary use in local storage
             // Further we can store image in separate storage
-            Image savedImage = imageService.saveImage(file,resizedFileName);
+            Image savedImage = imageService.saveImage(file,resizedFileName, width, height);
+            if(savedImage!=null){
+                imageService.resizeImage(savedImage);
+            }
+            System.out.println("Image uploaded sucessfully for Image Id : "+ savedImage.getId()+ ", name : "+savedImage.getName());
             return ResponseEntity.ok(savedImage);
 
         } catch (IOException e) {
@@ -81,10 +84,18 @@ public class ImageUploadController {
     }
 
     @GetMapping("/download")
-    public ResponseEntity<Resource> downloadImage(@RequestParam("resizedFileName") String resizedFileName) {
+    public ResponseEntity<?> downloadImage(
+            @RequestParam("id") Long id) {
         try {
+
+            Image image = imageService.findById(id);
+            if(image.getResizedStatus()==false){
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Image  : " + image.getName() + " is not resized yet.");
+            }
+
             // Construct the file path
-            Path filePath = Paths.get(RESIZED_FILE_DIR).resolve(resizedFileName).normalize();
+            String resizedFileName = image.getResizedImageName();
+            Path filePath = Paths.get(image.getResizedFilePath());
             Resource resource = new UrlResource(filePath.toUri());
 
             // Check if the file exists and is readable
@@ -97,7 +108,7 @@ public class ImageUploadController {
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resizedFileName + "\"")
-                    .body(resource);
+                   .body(resource);
 
         } catch (MalformedURLException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
