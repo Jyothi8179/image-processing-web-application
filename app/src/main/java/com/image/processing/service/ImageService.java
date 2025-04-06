@@ -17,11 +17,23 @@ public class ImageService {
 
     @Autowired ImageRepository imageRepository;
 
-    public Image saveImage(MultipartFile file, String resizedFileName) throws IOException {
+    public Image saveImage(MultipartFile file, String resizedFileName) throws Exception {
 
-        if(resizedFileName==null){
-            resizedFileName = "resized";
+        String originalFileName = file.getOriginalFilename();
+        String originalFileExtn =  originalFileName.split("\\.")[1];
+        if(resizedFileName==null || resizedFileName == "" || !resizedFileName.contains(".")){
+            resizedFileName = originalFileName.split("\\.")[0] + "-resized." + originalFileExtn;
         }
+
+        if(originalFileExtn.equalsIgnoreCase("jpeg")|| originalFileExtn.equalsIgnoreCase("jpg")){
+            resizedFileName = resizedFileName.split("\\.")[0] + "." + originalFileExtn;
+        }
+
+        String resizeFileExtn = resizedFileName.split("\\.")[1];
+        if(!originalFileExtn.equalsIgnoreCase(resizeFileExtn)){
+            throw new Exception("uploaded/resize file extension didn't matched");
+        }
+
         // Ensure the upload directory exists
         File directory = new File(UPLOAD_DIR);
         if (!directory.exists()) {
@@ -29,14 +41,14 @@ public class ImageService {
         }
 
         // Save the file to the local storage
-        String filePath = UPLOAD_DIR + File.separator + file.getOriginalFilename();
+        String filePath = UPLOAD_DIR + File.separator + originalFileName;
         file.transferTo(new File(filePath));
 
         // Save image metadata to the database
         Image image = new Image();
-        image.setName(file.getOriginalFilename());
+        image.setName(originalFileName);
         image.setImageSize(file.getSize());
-        image.setResizedImageName(file.getOriginalFilename().split("\\.")[0]+"_"+resizedFileName);
+        image.setResizedImageName(resizedFileName);
         image.setResizedStatus(false); // Initially set to false until resized
 
         return imageRepository.save(image);

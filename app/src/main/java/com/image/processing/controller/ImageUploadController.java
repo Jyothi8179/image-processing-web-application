@@ -54,7 +54,7 @@ public class ImageUploadController {
             @RequestParam("image") MultipartFile file,
             @RequestParam("width") @Min(1) int width,
             @RequestParam("height") @Min(1) int height,
-            @RequestParam("resizedFileName") @NotBlank String resizedFileName) {
+            @RequestParam(value = "resizedFileName", required = false) String resizedFileName) {
 
         try {
             // Validate file size
@@ -74,7 +74,10 @@ public class ImageUploadController {
         } catch (IOException e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving image: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error : " + e.getMessage());
         }
+
     }
 
     @GetMapping("/download")
