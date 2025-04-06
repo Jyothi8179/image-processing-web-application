@@ -49,7 +49,10 @@ public class ImageResizeService {
 
         // Define resized image file name
         String resizedFileName = (resizeImageName != null) ? resizeImageName : "resized_" + originalFileName;
-        String resizedFilePath = RESIZED_FILE_DIR + File.separator +resizedFileName;
+        String timestamp = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+
+        String resizedFilePath = RESIZED_FILE_DIR + File.separator + timestamp+ "-" + resizedFileName;
         System.out.println("Resized file path : "+ resizedFilePath);
 
         // Run ImageMagick command to resize the image

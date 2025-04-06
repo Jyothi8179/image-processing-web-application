@@ -20,20 +20,32 @@ public class ImageService {
     @Autowired ImageResizeService imageResizeService;
 
     public Image saveImage(MultipartFile file, String resizedFileName, int width, int height) throws Exception {
-
-        String originalFileName = file.getOriginalFilename().replace(' ','-');
-        String originalFileExtn =  originalFileName.split("\\.")[1];
-        if(resizedFileName==null || resizedFileName == "" || !resizedFileName.contains(".")){
-            resizedFileName = originalFileName.split("\\.")[0] + "-resized." + originalFileExtn;
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File cannot be null or empty");
         }
 
-        if(originalFileExtn.equalsIgnoreCase("jpeg")|| originalFileExtn.equalsIgnoreCase("jpg")){
-            resizedFileName = resizedFileName.split("\\.")[0] + "." + originalFileExtn;
+        String originalFileName = file.getOriginalFilename().replace(' ', '-');
+        String originalFileExtn = getFileExtension(originalFileName);
+        String baseFileName = getBaseFileName(originalFileName);
+
+        if (originalFileExtn.isEmpty()) {
+            throw new Exception("Uploaded file must have an extension");
         }
 
-        String resizeFileExtn = resizedFileName.split("\\.")[1];
-        if(!originalFileExtn.equalsIgnoreCase(resizeFileExtn)){
-            throw new Exception("uploaded/resize file extension didn't matched");
+        // Handle missing or invalid resized file name
+        if (resizedFileName == null || resizedFileName.trim().isEmpty() || !resizedFileName.contains(".")) {
+            resizedFileName = baseFileName + "-resized." + originalFileExtn;
+        }
+
+        // Enforce extension consistency
+        String resizedFileExtn = getFileExtension(resizedFileName);
+        if (!originalFileExtn.equalsIgnoreCase(resizedFileExtn)) {
+            throw new Exception("Uploaded and resized file extensions do not match");
+        }
+
+        // Normalize file extension for JPEG
+        if (originalFileExtn.equalsIgnoreCase("jpeg") || originalFileExtn.equalsIgnoreCase("jpg")) {
+            resizedFileName = getBaseFileName(resizedFileName) + "." + originalFileExtn;
         }
 
         // Ensure the upload directory exists
@@ -42,14 +54,15 @@ public class ImageService {
             directory.mkdirs();
         }
 
-        // Save the file to the local storage
+        // Generate file path with timestamp
         String timestamp = java.time.LocalDateTime.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        // Adding time stamp to filename which to uniquely identity the images (as if multiple imagw may have same name)
-        String filePath = UPLOAD_DIR + File.separator + timestamp+"_"+originalFileName;
+        String filePath = UPLOAD_DIR + File.separator + timestamp + "_" + originalFileName;
+
+        // Save to disk
         file.transferTo(new File(filePath));
 
-        // Save image metadata to the database
+        // Save metadata to database
         Image image = new Image();
         image.setName(originalFileName);
         image.setImageSize(file.getSize());
@@ -57,17 +70,23 @@ public class ImageService {
         image.setOriginalFilePath(filePath);
         image.setHeight(height);
         image.setWidth(width);
-        image.setResizedStatus(false); // Initially set to false until resized
+        image.setResizedStatus(false);
 
         return imageRepository.save(image);
     }
 
-    public Image saveImageMetaData(Image image){
-        return imageRepository.save(image);
+    private String getFileExtension(String fileName) {
+        if (fileName != null && fileName.contains(".")) {
+            return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        }
+        return "";
     }
 
-    public boolean isImageResized(Long id){
-        return imageRepository.getResizedStatusById(id);
+    private String getBaseFileName(String fileName) {
+        if (fileName != null && fileName.contains(".")) {
+            return fileName.substring(0, fileName.lastIndexOf("."));
+        }
+        return fileName;
     }
 
     public Image findById(Long id) {
