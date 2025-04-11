@@ -7,10 +7,10 @@
 
 	<groupId>com.image.processor</groupId>
 	<artifactId>processing</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<packaging>pom</packaging>
 
-	<name>Image Processing Parent</name>
+	<name>image-processing-app</name>
 	<description>Parent module for image processing app</description>
 
 	<modules>
@@ -49,6 +49,17 @@
 							</goals>
 						</execution>
 					</executions>
+				</plugin>
+
+				<!--supporting EC 2-->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.8.1</version>
+					<configuration>
+						<source>17</source>
+						<target>17</target>
+					</configuration>
 				</plugin>
 			</plugins>
 		</pluginManagement>

@@ -87,3 +87,8 @@ http://localhost:8080
 ```
 localhost:3306
 ```
+
+### Build and push docker image to dockerHub
+```shell
+   docker build --platform linux/amd64 --no-cache -t jyothi8179/image-processing-web-application .
+```
