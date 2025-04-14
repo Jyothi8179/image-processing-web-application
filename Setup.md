@@ -10,7 +10,7 @@ Run this command in the terminal:
 
 ### 🐳 Run Project
 
-#### 1. Rebuild docker container ( without CACHE )  
+#### 1. Rebuild docker container ( without CACHE )
 ```shell
   docker-compose build --no-cache
 ```
@@ -86,4 +86,9 @@ http://localhost:8080
 - Database is accessible at:
 ```
 localhost:3306
+```
+
+### Build and push docker image to dockerHub
+```shell
+   docker build --platform linux/amd64 --no-cache -t jyothi8179/image-processing-web-application .
 ```
