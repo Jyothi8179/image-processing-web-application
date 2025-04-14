@@ -37,15 +37,18 @@ public class ImageService {
             resizedFileName = baseFileName + "-resized." + originalFileExtn;
         }
 
-        // Enforce extension consistency
         String resizedFileExtn = getFileExtension(resizedFileName);
-        if (!originalFileExtn.equalsIgnoreCase(resizedFileExtn)) {
-            throw new Exception("Uploaded and resized file extensions do not match");
-        }
 
         // Normalize file extension for JPEG
-        if (originalFileExtn.equalsIgnoreCase("jpeg") || originalFileExtn.equalsIgnoreCase("jpg")) {
+        if ((originalFileExtn.equalsIgnoreCase("jpeg") || originalFileExtn.equalsIgnoreCase("jpg"))
+        && (resizedFileExtn.equalsIgnoreCase("jpeg") || resizedFileExtn.equalsIgnoreCase("jpg"))) {
             resizedFileName = getBaseFileName(resizedFileName) + "." + originalFileExtn;
+        }
+
+        // Enforce extension consistency
+        resizedFileExtn = getFileExtension(resizedFileName);
+        if (!originalFileExtn.equalsIgnoreCase(resizedFileExtn)) {
+            throw new Exception("Uploaded and resized file extensions do not match");
         }
 
         // Ensure the upload directory exists

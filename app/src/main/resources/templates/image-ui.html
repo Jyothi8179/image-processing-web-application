@@ -48,6 +48,11 @@
             display: none;
             margin-top: 20px;
         }
+
+        .alert-box {
+            display: none;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -57,9 +62,11 @@
         <p class="text-muted">Resize and download your image in one go</p>
     </div>
 
+    <div id="alertBox" class="alert alert-info alert-box"></div>
+
     <div class="card shadow p-4 mb-4">
         <h5 class="mb-3">Upload Image</h5>
-        <form id="uploadForm" method="POST" enctype="multipart/form-data" action="/v1/image/upload">
+        <form id="uploadForm" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label class="form-label">Select Image</label>
                 <input type="file" class="form-control" name="image" required accept="image/*">
@@ -89,65 +96,102 @@
 </div>
 
 <script>
-    let imageId;
+    document.addEventListener("DOMContentLoaded", () => {
+        let imageId = null;
 
-    document.getElementById('uploadForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
+        const form = document.getElementById('uploadForm');
+        const alertBox = document.getElementById('alertBox');
+        const downloadSection = document.getElementById('downloadSection');
+        const loading = document.getElementById('loading');
 
-        fetch('/v1/image/upload', {
-            method: 'POST',
-            body: formData
-        }).then(response => response.json())
-          .then(data => {
-              if (data.id) {
-                  imageId = data.id;
-                  document.getElementById('downloadSection').style.display = 'block';
-              } else {
-                  alert("Failed to upload image.");
-              }
-          }).catch(error => {
-              alert("Error occurred: " + error);
-          });
-    });
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            alertBox.style.display = 'none';
 
-    document.getElementById('downloadButton').addEventListener('click', function () {
-        const apiKey = 'v0-V9b0iPNXZPhY8K9zDQh4ufL73uSz9sx3MWdnjR4w';
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('/v1/image/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-        fetch(`/v1/image/download?id=${imageId}`, {
-            headers: {
-                'X-API-Key': apiKey
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`${errorText}`);
+
+                }
+
+                const data = await response.json();
+                if (data && data.id) {
+                    imageId = data.id;
+                    downloadSection.style.display = 'block';
+                    showAlert("✅ Image uploaded successfully. Ready for download.", "info");
+                } else {
+                    showAlert("❌ Upload failed. Please try again.", "danger");
+                }
+            } catch (error) {
+                showAlert("❌ Upload failed. Please try again : " + error.message, "danger");
             }
-        }).then(response => {
-            if (response.status === 404) {
-                showLoading();
-            } else if (response.ok) {
-                return response.blob();
-            } else {
-                throw new Error("Failed to download image.");
+        });
+
+        document.getElementById('downloadButton').addEventListener('click', async function () {
+            if (!imageId) {
+                showAlert("⚠️ No image available to download.", "warning");
+                return;
             }
-        }).then(blob => {
-            if (blob) {
+
+            const apiKey = 'v0-V9b0iPNXZPhY8K9zDQh4ufL73uSz9sx3MWdnjR4w';
+
+            try {
+                const response = await fetch(`/v1/image/download?id=${imageId}`, {
+                    headers: { 'X-API-Key': apiKey }
+                });
+
+                if (response.status === 404 || response.status === 204) {
+                    showLoading();
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error("Download failed with status: " + response.status);
+                }
+
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = "resized-image.jpg";
+
+                if (contentDisposition && contentDisposition.indexOf('filename=') !== -1) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches != null && matches[1]) {
+                        fileName = matches[1];
+                    }
+                }
+
+
+                const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = "resized-image.jpg";
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
+            } catch (error) {
+                console.error("Download Error:", error);
+                showAlert("❌ Download error: " + error.message, "danger");
             }
-        }).catch(error => {
-            alert("Error occurred: " + error);
         });
-    });
 
-    function showLoading() {
-        const loadingElement = document.getElementById('loading');
-        loadingElement.style.display = 'block';
-        setTimeout(() => {
-            loadingElement.style.display = 'none';
-        }, 3000);
-    }
+        function showAlert(message, type = "info") {
+            alertBox.className = `alert alert-${type} alert-box`;
+            alertBox.innerText = message;
+            alertBox.style.display = 'block';
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+            setTimeout(() => loading.style.display = 'none', 3000);
+        }
+    });
 </script>
 </body>
 </html>

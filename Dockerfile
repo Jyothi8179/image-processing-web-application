@@ -5,6 +5,12 @@ FROM --platform=linux/amd64 openjdk:17-jdk-slim
 
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV SPRING_DATASOURCE_URL=jdbc:postgresql://dpg-cvrm3v6r433s73augu10-a.oregon-postgres.render.com:5432/image_resize_db
+ENV SPRING_DATASOURCE_USERNAME=root
+ENV SPRING_DATASOURCE_PASSWORD=tPSopK24ar64tqyTv3aJukunUzwHcYXS
+ENV SERVER_PORT=10000
+ENV SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+
 
 # Use secure sources and install dependencies
 RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list && \
@@ -32,13 +38,13 @@ RUN wget https://download.imagemagick.org/archive/ImageMagick-7.1.1-47.tar.gz &&
     ./configure && make && make install && ldconfig && \
     cd .. && rm -rf ImageMagick-7.1.1-47*
 
-# Set working directory
+# Set working- directory
 WORKDIR /app
 
-# Copy the JAR
-COPY app/target/app-0.0.1.jar app.jar
+# Copy  JAR
+COPY app/target/app-0.0.1.jar app-v1.jar
+# PORT for render
+EXPOSE 10000
 
-EXPOSE 8080
-
-# Run the Spring Boot app
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the Spring-Boot app
+ENTRYPOINT ["java", "-jar", "app-v1.jar"]
