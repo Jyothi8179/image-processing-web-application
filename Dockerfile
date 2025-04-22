@@ -10,6 +10,7 @@ ENV SPRING_DATASOURCE_USERNAME=root
 ENV SPRING_DATASOURCE_PASSWORD=tPSopK24ar64tqyTv3aJukunUzwHcYXS
 ENV SERVER_PORT=10000
 ENV SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+ENV SELF_PING_URL=https://image-processing-web-application.onrender.com/health
 
 
 # Use secure sources and install dependencies
@@ -44,7 +45,7 @@ WORKDIR /app
 # Copy  JAR
 COPY app/target/app-0.0.1.jar app-v1.jar
 # PORT for render
-EXPOSE 10000
+EXPOSE ${PORT}
 
 # Run the Spring-Boot app
 ENTRYPOINT ["java", "-jar", "app-v1.jar"]
