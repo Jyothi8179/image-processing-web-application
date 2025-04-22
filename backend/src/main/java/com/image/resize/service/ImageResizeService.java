@@ -1,6 +1,10 @@
 package com.image.resize.service;
 
+import io.micrometer.common.util.internal.logging.Slf4JLoggerFactory;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -9,10 +13,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 
+@Slf4j
 @Service
 public class ImageResizeService {
+    Logger logger = LoggerFactory.getLogger(ImageResizeService.class);
     public static final String RESIZED_FILE_DIR = System.getProperty("user.dir") + File.separator + "resized";
-
 
     // This will run at application restart
     @PostConstruct
@@ -31,19 +36,19 @@ public class ImageResizeService {
     public String resizeImage(String originalImagePath, int width, int height, String resizeImageName) throws IOException {
         // Ensure output directory exists
 
-        System.out.println("<==>");
+        logger.info("Image resizing started : "+ originalImagePath);
         File resizedFolder = new File("/resize/resized");
         if (!resizedFolder.exists()) {
             resizedFolder.mkdirs();
         }
-        System.out.println("Original image path : "+ originalImagePath);
+        logger.info("Original image path : "+ originalImagePath);
         // Original file path
         File originalFile = new File(originalImagePath);
         String originalFileName = originalFile.getName();
 
         // Check if the file exists
         if (!originalFile.exists()) {
-            System.out.println("File not found: " + originalFileName);
+            logger.info("File not found: " + originalFileName);
             throw new IOException("File not found: " + originalFileName);
         }
 
@@ -53,7 +58,7 @@ public class ImageResizeService {
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
 
         String resizedFilePath = RESIZED_FILE_DIR + File.separator + timestamp+ "-" + resizedFileName;
-        System.out.println("Resized file path : "+ resizedFilePath);
+        logger.info("Resized file path : "+ resizedFilePath);
 
         // Run ImageMagick command to resize the image
         String command = String.format("magick %s -resize %dx%d %s",
@@ -68,7 +73,7 @@ public class ImageResizeService {
                 new InputStreamReader(process.getErrorStream()))) {
             String line;
             while ((line = errorReader.readLine()) != null) {
-                System.err.println("ImageMagick Error: " + line);
+                logger.error("ImageMagick Error: " + line);
             }
         }
         try {
@@ -78,6 +83,7 @@ public class ImageResizeService {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            e.printStackTrace();
             throw new IOException("Image resizing interrupted", e);
         }
 

@@ -1,11 +1,16 @@
 package com.image.processing.controller;
 
+import com.app.service.CleanUpService;
+import com.app.service.SelfPingService;
 import com.image.processing.entity.Image;
 import com.image.processing.service.ImageService;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.Max;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -34,7 +39,13 @@ import java.nio.file.Paths;
 @Validated
 public class ImageUploadController {
 
+
+    @Value("$auth.delete.token")
+    String token;
+
+    Logger logger = LoggerFactory.getLogger(ImageUploadController.class);
     @Autowired ImageService imageService;
+    @Autowired SelfPingService selfPingService;
 
     private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
     public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
@@ -87,7 +98,7 @@ public class ImageUploadController {
             if(savedImage!=null){
                 imageService.resizeImage(savedImage);
             }
-            System.out.println("Image uploaded sucessfully for Image Id : "+ savedImage.getId()+ ", name : "+savedImage.getName());
+            logger.info("Image uploaded sucessfully for Image Id : "+ savedImage.getId()+ ", name : "+savedImage.getName());
             return ResponseEntity.ok(savedImage);
 
         } catch (IOException e) {
@@ -151,6 +162,17 @@ public class ImageUploadController {
         }
 
         return false;  // Invalid image if no readers were found
+    }
+
+    @DeleteMapping("/clean-up")
+    public ResponseEntity<String> testing(@RequestParam String token){ // ideally we should take it from @Header/@Auth Body
+        if(!token.equals(token)){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: Invalid token");
+
+        }
+        selfPingService.cleanUp();
+        return ResponseEntity.noContent().build();
     }
 
 }
