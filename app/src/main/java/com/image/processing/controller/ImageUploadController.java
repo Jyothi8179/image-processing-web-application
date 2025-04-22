@@ -165,7 +165,7 @@ public class ImageUploadController {
     }
 
     @DeleteMapping("/clean-up")
-    public ResponseEntity<String> testing(@RequestParam String token){
+    public ResponseEntity<String> testing(@RequestParam String token){ // ideally we should take it from @Header/@Auth Body
         if(!token.equals(token)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Unauthorized: Invalid token");
