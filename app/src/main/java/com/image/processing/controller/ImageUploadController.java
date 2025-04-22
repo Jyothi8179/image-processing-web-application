@@ -1,6 +1,5 @@
 package com.image.processing.controller;
 
-import com.app.service.CleanUpService;
 import com.app.service.SelfPingService;
 import com.image.processing.entity.Image;
 import com.image.processing.service.ImageService;
@@ -43,12 +42,17 @@ import java.nio.file.Paths;
 public class ImageUploadController {
 
 
-    @Value("$auth.delete.token")
-    String token;
+    @Value("${auth.cleanup.token}")
+    String expectedToken;
 
     Logger logger = LoggerFactory.getLogger(ImageUploadController.class);
     @Autowired ImageService imageService;
     @Autowired SelfPingService selfPingService;
+
+
+
+    private static final int MAX_WIDTH = 7680;
+    private static final int MAX_HEIGHT = 4320;
 
     private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
     public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
@@ -181,11 +185,11 @@ public class ImageUploadController {
     }
 
     @DeleteMapping("/clean-up")
-    public ResponseEntity<String> testing(@RequestParam String token){ // ideally we should take it from @Header/@Auth Body
-        if(!token.equals(token)){
+    public ResponseEntity<String> testing(@RequestParam(value = "token") String token){ // ideally we should take it from @Header/@Auth Body
+
+        if(!token.equals(expectedToken)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Unauthorized: Invalid token");
-
         }
         selfPingService.cleanUp();
         return ResponseEntity.noContent().build();

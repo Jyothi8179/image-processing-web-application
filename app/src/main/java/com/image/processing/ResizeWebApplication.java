@@ -11,9 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAsync
 @ComponentScan(basePackages = {
 		"com.app",
-		"com.image.processing",       // your main app and ImageService
-		"com.image.resize",    // backend module with ImageResizeService
-		"com.image.conversion"
+		"com.image.*"
 })
 public class ResizeWebApplication {
 
