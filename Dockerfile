@@ -11,6 +11,8 @@ ENV SPRING_DATASOURCE_PASSWORD=tPSopK24ar64tqyTv3aJukunUzwHcYXS
 ENV SERVER_PORT=10000
 ENV SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
 ENV SELF_PING_URL=https://image-processing-web-application.onrender.com/health
+ENV CLEANUP_INTERVAL_MILISECONDS=21600000
+ENV CLEANUP_TOKEN=myCustomCleanUpToken
 
 
 # Use secure sources and install dependencies

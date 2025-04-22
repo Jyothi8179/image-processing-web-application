@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Max;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -37,6 +38,10 @@ import java.nio.file.Paths;
 @RequestMapping("/v1/image")
 @Validated
 public class ImageUploadController {
+
+
+    @Value("$auth.delete.token")
+    String token;
 
     Logger logger = LoggerFactory.getLogger(ImageUploadController.class);
     @Autowired ImageService imageService;
@@ -159,9 +164,15 @@ public class ImageUploadController {
         return false;  // Invalid image if no readers were found
     }
 
-    @GetMapping("/test")
-    public void testing(){
+    @DeleteMapping("/clean-up")
+    public ResponseEntity<String> testing(@RequestParam String token){
+        if(!token.equals(token)){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized: Invalid token");
+
+        }
         selfPingService.cleanUp();
+        return ResponseEntity.noContent().build();
     }
 
 }
