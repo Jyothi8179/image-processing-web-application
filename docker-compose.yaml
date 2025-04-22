@@ -18,8 +18,8 @@ services:
         timeout: 5s
       volumes:
         - mysql_data:/var/lib/mysql
-
-
+  #
+  #
     phpmyadmin:
       image: phpmyadmin/phpmyadmin
       container_name: php-myadmin
@@ -43,7 +43,7 @@ services:
 #    image: image-app
 #    restart: unless-stopped
 #    ports:
-#      - "8080:8080"
+#      - "10000:10000"
 #    environment:
 #      #      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
 #      #      SPRING_DATASOURCE_USERNAME: root

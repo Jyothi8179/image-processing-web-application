@@ -4,6 +4,8 @@ import com.image.processing.entity.Image;
 import com.image.processing.repository.ImageRepository;
 import com.image.processing.utils.ImageProcessingUtils;
 import com.image.resize.service.ImageResizeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,8 @@ import static com.image.processing.controller.ImageUploadController.UPLOAD_DIR;
 
 @Service
 public class ImageService {
+
+    Logger logger = LoggerFactory.getLogger(ImageService.class);
 
     @Autowired ImageRepository imageRepository;
     @Autowired ImageResizeService imageResizeService;
@@ -87,16 +91,15 @@ public class ImageService {
     public void resizeImage(Image image){
 
         try {
-            System.out.println("Image Resize started for Image Id : "+ image.getId()+ ", name : "+image.getName());
-            System.out.println(image);
-            System.out.println(image.getOriginalFilePath()+", "+ image.getWidth()+","+ image.getHeight()+","+ image.getResizedImageName());
+            logger.info("Image Resize started for Image Id : "+ image.getId()+ ", name : "+image.getName());
+            logger.info(image.getOriginalFilePath()+", "+ image.getWidth()+","+ image.getHeight()+","+ image.getResizedImageName());
             String resizedFilePath  = imageResizeService.resizeImage(image.getOriginalFilePath(), image.getWidth(), image.getHeight(), image.getResizedImageName());
             image.setResizedFilePath(resizedFilePath);
             image.setResizedStatus(true);
             imageRepository.save(image);
         }catch (Exception e){
             e.printStackTrace();
-            System.out.println("ExceptionOccured while resizing image : "+ e.getCause()+", "+e.getMessage());
+            logger.error("ExceptionOccured while resizing image : "+ e.getCause()+", "+e.getMessage());
         }
     }
 }
