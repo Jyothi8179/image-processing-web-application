@@ -82,6 +82,30 @@ public class Image {
         this.resizedFilePath = resizedFilePath;
     }
 
+    public String getConvertedFileName() {
+        return convertedFileName;
+    }
+
+    public void setConvertedFileName(String convertedFileName) {
+        this.convertedFileName = convertedFileName;
+    }
+
+    public Boolean getConversionStatus() {
+        return conversionStatus;
+    }
+
+    public void setConversionStatus(Boolean conversionStatus) {
+        this.conversionStatus = conversionStatus;
+    }
+
+    public String getConvertedFilePath() {
+        return convertedFilePath;
+    }
+
+    public void setConvertedFilePath(String convertedFilePath) {
+        this.convertedFilePath = convertedFilePath;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -100,14 +124,22 @@ public class Image {
 
     @Column(name = "resizedImageName")
     private String resizedImageName;
+    @Column(name= "convertedFileName")
+    private String convertedFileName;
 
     @Column(name = "resizedStatus")
     private Boolean resizedStatus;
+
+    @Column(name = "coonvertedFileStatus")
+    private Boolean conversionStatus;
 
     @Column(name = "originalFilePath")
     private String originalFilePath;
 
     @Column(name = "resizedFilePath")
     private String resizedFilePath;
+
+    @Column(name="convertedFilePath")
+    private String convertedFilePath;
 
 }

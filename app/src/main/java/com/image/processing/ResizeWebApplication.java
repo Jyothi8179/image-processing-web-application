@@ -12,7 +12,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan(basePackages = {
 		"com.app",
 		"com.image.processing",       // your main app and ImageService
-		"com.image.resize.service"    // backend module with ImageResizeService
+		"com.image.resize",    // backend module with ImageResizeService
+		"com.image.conversion"
 })
 public class ResizeWebApplication {
 

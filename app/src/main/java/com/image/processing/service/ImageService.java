@@ -2,6 +2,7 @@ package com.image.processing.service;
 
 import com.image.processing.entity.Image;
 import com.image.processing.repository.ImageRepository;
+import com.image.processing.utils.ImageProcessingUtils;
 import com.image.resize.service.ImageResizeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -25,8 +26,8 @@ public class ImageService {
         }
 
         String originalFileName = file.getOriginalFilename().replace(' ', '-');
-        String originalFileExtn = getFileExtension(originalFileName);
-        String baseFileName = getBaseFileName(originalFileName);
+        String originalFileExtn = ImageProcessingUtils.getFileExtension(originalFileName);
+        String baseFileName = ImageProcessingUtils.getBaseFileName(originalFileName);
 
         if (originalFileExtn.isEmpty()) {
             throw new Exception("Uploaded file must have an extension");
@@ -37,16 +38,16 @@ public class ImageService {
             resizedFileName = baseFileName + "-resized." + originalFileExtn;
         }
 
-        String resizedFileExtn = getFileExtension(resizedFileName);
+        String resizedFileExtn = ImageProcessingUtils.getFileExtension(resizedFileName);
 
         // Normalize file extension for JPEG
         if ((originalFileExtn.equalsIgnoreCase("jpeg") || originalFileExtn.equalsIgnoreCase("jpg"))
         && (resizedFileExtn.equalsIgnoreCase("jpeg") || resizedFileExtn.equalsIgnoreCase("jpg"))) {
-            resizedFileName = getBaseFileName(resizedFileName) + "." + originalFileExtn;
+            resizedFileName = ImageProcessingUtils.getBaseFileName(resizedFileName) + "." + originalFileExtn;
         }
 
         // Enforce extension consistency
-        resizedFileExtn = getFileExtension(resizedFileName);
+        resizedFileExtn = ImageProcessingUtils.getFileExtension(resizedFileName);
         if (!originalFileExtn.equalsIgnoreCase(resizedFileExtn)) {
             throw new Exception("Uploaded and resized file extensions do not match");
         }
@@ -76,20 +77,6 @@ public class ImageService {
         image.setResizedStatus(false);
 
         return imageRepository.save(image);
-    }
-
-    private String getFileExtension(String fileName) {
-        if (fileName != null && fileName.contains(".")) {
-            return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-        }
-        return "";
-    }
-
-    private String getBaseFileName(String fileName) {
-        if (fileName != null && fileName.contains(".")) {
-            return fileName.substring(0, fileName.lastIndexOf("."));
-        }
-        return fileName;
     }
 
     public Image findById(Long id) {

@@ -3,6 +3,7 @@ package com.image.processing.controller;
 import com.image.processing.entity.Image;
 import com.image.processing.service.ImageService;
 
+import com.image.processing.utils.ImageProcessingUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.Max;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,9 +40,6 @@ public class ImageUploadController {
     private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
     public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
 
-    private static final int MAX_WIDTH = 7680;
-    private static final int MAX_HEIGHT = 4320;
-
     // This will run at application restart
     @PostConstruct
     public void createTempDirectory() throws Exception {
@@ -73,13 +71,11 @@ public class ImageUploadController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only image files are allowed.");
             }
 
-            boolean isValid = checkImageResolution(file.getInputStream());
+            boolean isValid = ImageProcessingUtils.checkImageResolution(file.getInputStream());
             if (!isValid) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Image resolution exceeds the maximum allowed (7680x4320).");
             }
-
-
 
             // Saving image for temporary use in local storage
             // Further we can store image in separate storage
@@ -129,28 +125,4 @@ public class ImageUploadController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
-    private boolean checkImageResolution(InputStream inputStream) throws IOException {
-        // Get ImageReader from ImageIO
-        ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream);
-        var readers = ImageIO.getImageReaders(imageInputStream);
-
-        if (readers.hasNext()) {
-            var reader = readers.next();
-            reader.setInput(imageInputStream);
-
-            // Get image metadata and check the resolution
-            IIOMetadata metadata = reader.getImageMetadata(0);
-            var formatName = metadata.getNativeMetadataFormatName();
-
-            // Check width and height (avoid loading the whole image into memory)
-            int width = reader.getWidth(0);
-            int height = reader.getHeight(0);
-
-            return width <= MAX_WIDTH && height <= MAX_HEIGHT;
-        }
-
-        return false;  // Invalid image if no readers were found
-    }
-
 }

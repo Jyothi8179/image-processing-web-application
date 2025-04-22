@@ -1,60 +1,60 @@
 version: '3.8'
 
 services:
-  #  db:
-  #    container_name: image-resize-db
-  #    image: mysql:8.0
-  #    platform: linux/x86_64
-  #    restart: unless-stopped
-  #    ports:
-  #      - "3306:3306"
-  #    environment:
-  #      MYSQL_DATABASE: image_resize_db
-  #      MYSQL_ROOT_PASSWORD: root
-  #    healthcheck:
-  #      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-  #      interval: 10s
-  #      retries: 5
-  #      timeout: 5s
-  #    volumes:
-  #      - mysql_data:/var/lib/mysql
-  #
-  #
-  #  phpmyadmin:
-  #    image: phpmyadmin/phpmyadmin
-  #    container_name: php-myadmin
-  #    platform: linux/x86_64
-  #    environment:
-  #      PMA_HOST: mysql
-  #      PMA_PORT: 3306
-  #      PMA_ARBITRARY: 1
-  #      UPLOAD_LIMIT: 512M
-  #    restart: unless-stopped
-  #    depends_on:
-  #      - db
-  #    ports:
-  #      - 8088:80
+    db:
+      container_name: image-resize-db
+      image: mysql:8.0
+      platform: linux/x86_64
+      restart: unless-stopped
+      ports:
+        - "3306:3306"
+      environment:
+        MYSQL_DATABASE: image_resize_db
+        MYSQL_ROOT_PASSWORD: root
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+        interval: 10s
+        retries: 5
+        timeout: 5s
+      volumes:
+        - mysql_data:/var/lib/mysql
 
-  app:
-    container_name: image-resize-app
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    image: image-app
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      #      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
-      #      SPRING_DATASOURCE_USERNAME: root
-      #      SPRING_DATASOURCE_PASSWORD: root
-      #      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 25MB
-      #      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 30MB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://dpg-cvrm3v6r433s73augu10-a.oregon-postgres.render.com:5432/image_resize_db
-      SPRING_DATASOURCE_USERNAME : root
-      SPRING_DATASOURCE_PASSWORD: tPSopK24ar64tqyTv3aJukunUzwHcYXS
-      SERVER_PORT: 10000
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME:
+
+    phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      container_name: php-myadmin
+      platform: linux/x86_64
+      environment:
+        PMA_HOST: mysql
+        PMA_PORT: 3306
+        PMA_ARBITRARY: 1
+        UPLOAD_LIMIT: 512M
+      restart: unless-stopped
+      depends_on:
+        - db
+      ports:
+        - 8088:80
+
+#  app:
+#    container_name: image-resize-app
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#    image: image-app
+#    restart: unless-stopped
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      #      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_resize_db
+#      #      SPRING_DATASOURCE_USERNAME: root
+#      #      SPRING_DATASOURCE_PASSWORD: root
+#      #      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 25MB
+#      #      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 30MB
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://dpg-cvrm3v6r433s73augu10-a.oregon-postgres.render.com:5432/image_resize_db
+#      SPRING_DATASOURCE_USERNAME : root
+#      SPRING_DATASOURCE_PASSWORD: tPSopK24ar64tqyTv3aJukunUzwHcYXS
+#      SERVER_PORT: 10000
+#      SPRING_DATASOURCE_DRIVER_CLASS_NAME:
 
 
   #    depends_on:
