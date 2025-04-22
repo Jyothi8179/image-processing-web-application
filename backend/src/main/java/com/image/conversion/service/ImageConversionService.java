@@ -43,7 +43,7 @@ public class ImageConversionService {
             System.out.println("Resized file path : "+ convertFilePath);
 
             // Run ImageMagick command to resize the image
-            String command = String.format("magick convert %s %s", originalFilePath, convertFilePath);
+            String command = String.format("magick %s %s", originalFilePath, convertFilePath);
 
             Process process = Runtime.getRuntime().exec(command);
 
