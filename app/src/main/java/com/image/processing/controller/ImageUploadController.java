@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -101,14 +103,29 @@ public class ImageUploadController {
         try {
 
             Image image = imageService.findById(id);
-            if(image.getResizedStatus()==false){
+            if(image.getResizedStatus()!=null && image.getResizedStatus()==false){
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Image  : " + image.getName() + " is not resized yet.");
             }
 
+            if(image.getConversionStatus()!=null && image.getConversionStatus()==false){
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Image  : " + image.getName() + " is not resized yet.");
+            }
+
+
             // Construct the file path
-            String resizedFileName = image.getResizedImageName();
-            Path filePath = Paths.get(image.getResizedFilePath());
-            Resource resource = new UrlResource(filePath.toUri());
+            String resizedFileName;
+            Path filePath;
+            Resource resource;
+
+            if(image.getConversionStatus()!=null && image.getConversionStatus()){
+                resizedFileName = image.getConvertedFileName();
+                filePath = Paths.get(image.getConvertedFilePath());
+                resource = new UrlResource(filePath.toUri());
+            }else{
+                resizedFileName = image.getResizedImageName();
+                filePath = Paths.get(image.getResizedFilePath());
+                resource = new UrlResource(filePath.toUri());
+            }
 
             // Check if the file exists and is readable
             if (!resource.exists() || !resource.isReadable()) {
@@ -116,10 +133,13 @@ public class ImageUploadController {
             }
 
             String contentType = "application/octet-stream";
+            String encodedFileName = URLEncoder.encode(resizedFileName, StandardCharsets.UTF_8)
+                    .replaceAll("\\+", "%20");
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resizedFileName + "\"")
-                   .body(resource);
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName)
+                    .body(resource);
 
         } catch (MalformedURLException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

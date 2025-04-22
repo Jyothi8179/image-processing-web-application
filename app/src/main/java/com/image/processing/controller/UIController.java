@@ -10,4 +10,9 @@ public class UIController {
     public String home() {
         return "image-ui";
     }
+
+    @GetMapping("/convert")
+    public String showConvertPage() {
+        return "convert"; // if using Thymeleaf
+    }
 }
