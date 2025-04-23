@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.util.Map;
 
 import static com.image.processing.controller.ImageUploadController.UPLOAD_DIR;
 
@@ -24,7 +25,7 @@ public class ImageService {
     @Autowired ImageRepository imageRepository;
     @Autowired ImageResizeService imageResizeService;
 
-    public Image saveImage(MultipartFile file, String resizedFileName, int width, int height) throws Exception {
+    public Image saveImage(MultipartFile file, String resizedFileName, int width, int height, int targetImageSize) throws Exception {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be null or empty");
         }
@@ -62,6 +63,22 @@ public class ImageService {
             directory.mkdirs();
         }
 
+        // CASE: targetImageSize is given
+        // re-calculating height and width as if user is sending targetImageSize then they will not send width and height
+        if(targetImageSize != -1){
+            Map dimension = ImageProcessingUtils.getImageDimension(file.getInputStream());
+            int origW = (int)dimension.get("width");
+            int origH = (int)dimension.get("height");
+
+            long origBytes = file.getSize();
+            double origKb = origBytes / 1024.0;
+            double ratio = targetImageSize / origKb;
+            double scale = Math.sqrt(ratio);
+
+            width = (int) Math.round(origW * scale);;
+            height = (int) Math.round(origH * scale);
+        }
+
         // Generate file path with timestamp
         String timestamp = java.time.LocalDateTime.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
@@ -78,6 +95,7 @@ public class ImageService {
         image.setOriginalFilePath(filePath);
         image.setHeight(height);
         image.setWidth(width);
+        image.setTargetImageSize(targetImageSize);
         image.setResizedStatus(false);
 
         return imageRepository.save(image);
@@ -93,7 +111,7 @@ public class ImageService {
         try {
             logger.info("Image Resize started for Image Id : "+ image.getId()+ ", name : "+image.getName());
             logger.info(image.getOriginalFilePath()+", "+ image.getWidth()+","+ image.getHeight()+","+ image.getResizedImageName());
-            String resizedFilePath  = imageResizeService.resizeImage(image.getOriginalFilePath(), image.getWidth(), image.getHeight(), image.getResizedImageName());
+            String resizedFilePath  = imageResizeService.resizeImage(image.getOriginalFilePath(), image.getWidth(), image.getHeight(), image.getResizedImageName(), image.getTargetImageSize());
             image.setResizedFilePath(resizedFilePath);
             image.setResizedStatus(true);
             imageRepository.save(image);

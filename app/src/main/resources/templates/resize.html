@@ -59,7 +59,7 @@
 <div class="container">
     <div class="header">
         <h2>Image Upload & Resize Portal</h2>
-        <p class="text-muted">Resize and resize your image in one go</p>
+        <p class="text-muted">Resize your image by dimension or target size</p>
     </div>
 
     <div id="alertBox" class="alert alert-info alert-box"></div>
@@ -68,17 +68,46 @@
         <h5 class="mb-3">Upload Image</h5>
         <form id="uploadForm" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
+                <label class="form-label">Resize Method</label>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="resizeMethod" id="resizeByDimension" value="dimension" checked>
+                        <label class="form-check-label" for="resizeByDimension">By Dimensions</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="resizeMethod" id="resizeBySize" value="size">
+                        <label class="form-check-label" for="resizeBySize">By File Size</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">Select Image</label>
                 <input type="file" class="form-control" name="image" required accept="image/*">
             </div>
-            <div class="mb-3">
+
+            <div class="mb-3 dimension-input">
                 <label class="form-label">Width (px)</label>
-                <input type="number" class="form-control" name="width" placeholder="Enter width" required>
+                <input type="number" class="form-control" name="width" placeholder="Enter width">
             </div>
-            <div class="mb-3">
+
+            <div class="mb-3 dimension-input">
                 <label class="form-label">Height (px)</label>
-                <input type="number" class="form-control" name="height" placeholder="Enter height" required>
+                <input type="number" class="form-control" name="height" placeholder="Enter height">
             </div>
+
+            <div class="mb-3 size-input" style="display: none;">
+                <label class="form-label">Target Image Size</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" name="targetSize" placeholder="e.g. 1000">
+                    <select class="form-select" name="sizeUnit">
+                        <option value="KB">KB</option>
+                        <option value="MB">MB</option>
+                    </select>
+                </div>
+                <small class="text-muted">Max: 25600 KB (25 MB)</small>
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">Resized Image Name (optional)</label>
                 <input type="text" class="form-control" name="resizedFileName" placeholder="e.g., resized-image.jpeg">
@@ -95,80 +124,94 @@
     </div>
 </div>
 
-<!-- Script moved to the bottom to ensure DOM is loaded before the script runs -->
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         let imageId = null;
-
         const form = document.getElementById('uploadForm');
         const alertBox = document.getElementById('alertBox');
         const downloadSection = document.getElementById('downloadSection');
         const loading = document.getElementById('loading');
 
+        document.querySelectorAll('input[name="resizeMethod"]').forEach(input => {
+            input.addEventListener('change', function () {
+                const method = this.value;
+                const dimensionInputs = document.querySelectorAll('.dimension-input');
+                const sizeInputs = document.querySelectorAll('.size-input');
+
+                if (method === 'dimension') {
+                    dimensionInputs.forEach(el => el.style.display = 'block');
+                    sizeInputs.forEach(el => el.style.display = 'none');
+                } else {
+                    dimensionInputs.forEach(el => el.style.display = 'none');
+                    sizeInputs.forEach(el => el.style.display = 'block');
+                }
+            });
+        });
+
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
             alertBox.style.display = 'none';
 
-            const width = parseInt(form.elements["width"].value);
-            const height = parseInt(form.elements["height"].value);
-
-            // UI validation for width and height (max 8K resolution)
-            if (isNaN(width) || width < 1 || width > 7680) {
-                showAlert("⚠️ Width must be between 1 and 7680 pixels, only supported up to 8K images", "warning");
-                return;
-            }
-
-            if (isNaN(height) || height < 1 || height > 4320) {
-                showAlert("⚠️ Height must be between 1 and 4320 pixels, only supported up to 8K images", "warning");
-                return;
-            }
-
+            const method = form.elements["resizeMethod"].value;
             const fileInput = form.elements["image"];
             const file = fileInput.files[0];
 
-            // Validate if file is selected
             if (!file) {
                 showAlert("⚠️ Please select an image to upload.", "warning");
                 return;
             }
 
-            // ✅ File size check (limit to 25 MB)
             const maxSizeMB = 25;
             if (file.size > maxSizeMB * 1024 * 1024) {
                 showAlert(`⚠️ File size must be less than ${maxSizeMB} MB.`, "warning");
                 return;
             }
 
-            // Image resolution check (before upload)
-            const img = new Image();
-            img.onload = function () {
-                if (img.width > 7680 || img.height > 4320) {
-                    showAlert("⚠️ The image resolution exceeds the maximum allowed (8K).", "warning");
-                } else {
-                    uploadImage(form);
-                }
-            };
-            img.onerror = function () {
-                showAlert("⚠️ Error loading image. Please try again.", "danger");
-            };
+            const formData = new FormData();
+            formData.append("image", file);
+            formData.append("resizedFileName", form.elements["resizedFileName"].value);
 
-            // Load the selected file as an image to check the resolution
-            img.src = URL.createObjectURL(file);
+            if (method === "dimension") {
+                const width = parseInt(form.elements["width"].value);
+                const height = parseInt(form.elements["height"].value);
+
+                if (isNaN(width) || width < 1 || width > 7680) {
+                    showAlert("⚠️ Width must be between 1 and 7680 pixels.", "warning");
+                    return;
+                }
+
+                if (isNaN(height) || height < 1 || height > 4320) {
+                    showAlert("⚠️ Height must be between 1 and 4320 pixels.", "warning");
+                    return;
+                }
+
+                formData.append("width", width);
+                formData.append("height", height);
+                formData.append("targetImageSize", -1);
+            } else {
+                const targetSize = parseInt(form.elements["targetSize"].value);
+                const sizeUnit = form.elements["sizeUnit"].value;
+
+                if (isNaN(targetSize) || targetSize < 1 || (sizeUnit === "KB" && targetSize > 25600) || (sizeUnit === "MB" && targetSize > 25)) {
+                    showAlert("⚠️ Enter a valid size up to 25600 KB (25 MB).", "warning");
+                    return;
+                }
+
+                const targetSizeKB = sizeUnit === "MB" ? targetSize * 1024 : targetSize;
+                formData.append("width", 1); // dummy
+                formData.append("height", 1); // dummy
+                formData.append("targetImageSize", targetSizeKB);
+            }
+
+            uploadImage(formData);
         });
 
-        async function uploadImage(form) {
-            const formData = new FormData(form);
+        async function uploadImage(formData) {
             try {
                 const response = await fetch('/v1/image/upload', {
                     method: 'POST',
                     body: formData
                 });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`${errorText}`);
-
-                }
 
                 const data = await response.json();
                 if (data && data.id) {
@@ -179,7 +222,7 @@
                     showAlert("❌ Upload failed. Please try again.", "danger");
                 }
             } catch (error) {
-                showAlert("❌ Upload failed. Please try again : " + error.message, "danger");
+                showAlert("❌ Upload failed. Please try again: " + error.message, "danger");
             }
         }
 
@@ -224,7 +267,6 @@
                 a.click();
                 a.remove();
             } catch (error) {
-                console.error("Download Error:", error);
                 showAlert("❌ Download error: " + error.message, "danger");
             }
         });

@@ -76,6 +76,7 @@ public class ImageUploadController {
             @RequestParam("image") MultipartFile file,
             @RequestParam("width")@Validated @Min(1) @Max(7680) int width,
             @RequestParam("height") @Validated @Min(1) @Max(4320) int height,
+            @RequestParam(value = "targetImageSize", defaultValue = "-1") int  targetImageSize,
             @RequestParam(value = "resizedFileName", required = false) String resizedFileName) {
 
         try {
@@ -96,7 +97,7 @@ public class ImageUploadController {
 
             // Saving image for temporary use in local storage
             // Further we can store image in separate storage
-            Image savedImage = imageService.saveImage(file,resizedFileName, width, height);
+            Image savedImage = imageService.saveImage(file,resizedFileName, width, height, targetImageSize);
             if(savedImage!=null){
                 imageService.resizeImage(savedImage);
             }

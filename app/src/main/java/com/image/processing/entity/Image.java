@@ -106,6 +106,14 @@ public class Image {
         this.convertedFilePath = convertedFilePath;
     }
 
+    public int getTargetImageSize() {
+        return targetImageSize;
+    }
+
+    public void setTargetImageSize(int targetImageSize) {
+        this.targetImageSize = targetImageSize;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -141,5 +149,8 @@ public class Image {
 
     @Column(name="convertedFilePath")
     private String convertedFilePath;
+
+    @Column(name="targetImageSize")
+    private int targetImageSize;
 
 }
