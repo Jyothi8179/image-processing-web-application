@@ -1,10 +1,10 @@
 package com.image.processing.controller;
 
-import com.app.service.CleanUpService;
 import com.app.service.SelfPingService;
 import com.image.processing.entity.Image;
 import com.image.processing.service.ImageService;
 
+import com.image.processing.utils.ImageProcessingUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.Max;
 import org.slf4j.Logger;
@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -40,18 +42,20 @@ import java.nio.file.Paths;
 public class ImageUploadController {
 
 
-    @Value("$auth.delete.token")
-    String token;
+    @Value("${auth.cleanup.token}")
+    String expectedToken;
 
     Logger logger = LoggerFactory.getLogger(ImageUploadController.class);
     @Autowired ImageService imageService;
     @Autowired SelfPingService selfPingService;
 
-    private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
-    public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
+
 
     private static final int MAX_WIDTH = 7680;
     private static final int MAX_HEIGHT = 4320;
+
+    private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
+    public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
 
     // This will run at application restart
     @PostConstruct
@@ -72,6 +76,7 @@ public class ImageUploadController {
             @RequestParam("image") MultipartFile file,
             @RequestParam("width")@Validated @Min(1) @Max(7680) int width,
             @RequestParam("height") @Validated @Min(1) @Max(4320) int height,
+            @RequestParam(value = "targetImageSize", defaultValue = "-1") int  targetImageSize,
             @RequestParam(value = "resizedFileName", required = false) String resizedFileName) {
 
         try {
@@ -84,17 +89,15 @@ public class ImageUploadController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only image files are allowed.");
             }
 
-            boolean isValid = checkImageResolution(file.getInputStream());
+            boolean isValid = ImageProcessingUtils.checkImageResolution(file.getInputStream());
             if (!isValid) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Image resolution exceeds the maximum allowed (7680x4320).");
             }
 
-
-
             // Saving image for temporary use in local storage
             // Further we can store image in separate storage
-            Image savedImage = imageService.saveImage(file,resizedFileName, width, height);
+            Image savedImage = imageService.saveImage(file,resizedFileName, width, height, targetImageSize);
             if(savedImage!=null){
                 imageService.resizeImage(savedImage);
             }
@@ -116,14 +119,29 @@ public class ImageUploadController {
         try {
 
             Image image = imageService.findById(id);
-            if(image.getResizedStatus()==false){
+            if(image.getResizedStatus()!=null && image.getResizedStatus()==false){
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Image  : " + image.getName() + " is not resized yet.");
             }
 
+            if(image.getConversionStatus()!=null && image.getConversionStatus()==false){
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Image  : " + image.getName() + " is not resized yet.");
+            }
+
+
             // Construct the file path
-            String resizedFileName = image.getResizedImageName();
-            Path filePath = Paths.get(image.getResizedFilePath());
-            Resource resource = new UrlResource(filePath.toUri());
+            String resizedFileName;
+            Path filePath;
+            Resource resource;
+
+            if(image.getConversionStatus()!=null && image.getConversionStatus()){
+                resizedFileName = image.getConvertedFileName();
+                filePath = Paths.get(image.getConvertedFilePath());
+                resource = new UrlResource(filePath.toUri());
+            }else{
+                resizedFileName = image.getResizedImageName();
+                filePath = Paths.get(image.getResizedFilePath());
+                resource = new UrlResource(filePath.toUri());
+            }
 
             // Check if the file exists and is readable
             if (!resource.exists() || !resource.isReadable()) {
@@ -131,10 +149,13 @@ public class ImageUploadController {
             }
 
             String contentType = "application/octet-stream";
+            String encodedFileName = URLEncoder.encode(resizedFileName, StandardCharsets.UTF_8)
+                    .replaceAll("\\+", "%20");
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resizedFileName + "\"")
-                   .body(resource);
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName)
+                    .body(resource);
 
         } catch (MalformedURLException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -165,11 +186,11 @@ public class ImageUploadController {
     }
 
     @DeleteMapping("/clean-up")
-    public ResponseEntity<String> testing(@RequestParam String token){ // ideally we should take it from @Header/@Auth Body
-        if(!token.equals(token)){
+    public ResponseEntity<String> testing(@RequestParam(value = "token") String token){ // ideally we should take it from @Header/@Auth Body
+
+        if(!token.equals(expectedToken)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Unauthorized: Invalid token");
-
         }
         selfPingService.cleanUp();
         return ResponseEntity.noContent().build();

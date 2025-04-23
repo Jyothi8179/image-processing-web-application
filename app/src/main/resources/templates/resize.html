@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Image Resizer & Converter</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        p.text-muted {
+            font-size: 1.1rem;
+            color: #ffffff;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: none;
+        }
+
+        .form-control::placeholder {
+            color: #ddd;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #fff;
+            box-shadow: 0 0 5px #fff;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-primary, .btn-success {
+            background-color: #ff6a00;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #fff;
+            transition: 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 106, 0, 0.4);
+        }
+
+        .btn-primary:hover, .btn-success:hover {
+            background-color: #ff7f24;
+            transform: translateY(-4px);
+        }
+
+        .btn:focus {
+            outline: none;
+        }
+
+        .alert-box {
+            display: none;
+            margin-bottom: 15px;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #downloadButton {
+            display: none;
+            margin-top: 20px;
+            background-color: #28a745;
+
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header mb-4">
+        <h2>Welcome to the Image Resizer & Converter</h2>
+        <p>Upload an image and resize it by dimensions or target file size.</p>
+    </div>
+
+    <div id="alertBox" class="alert alert-info alert-box"></div>
+
+    <div class="p-4 mb-4 text-start">
+        <h5 class="mb-3">Upload Image</h5>
+        <form id="uploadForm" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">Resize Method</label>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="resizeMethod" id="resizeByDimension" value="dimension" checked>
+                        <label class="form-check-label" for="resizeByDimension">By Dimensions</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="resizeMethod" id="resizeBySize" value="size">
+                        <label class="form-check-label" for="resizeBySize">By File Size</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Select Image</label>
+                <input type="file" class="form-control" name="image" required accept="image/*">
+            </div>
+
+            <div class="mb-3 dimension-input">
+                <label class="form-label">Width (px)</label>
+                <input type="number" class="form-control" name="width" placeholder="Enter width">
+            </div>
+
+            <div class="mb-3 dimension-input">
+                <label class="form-label">Height (px)</label>
+                <input type="number" class="form-control" name="height" placeholder="Enter height">
+            </div>
+
+            <div class="mb-3 size-input" style="display: none;">
+                <label class="form-label">Target Image Size</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" name="targetSize" placeholder="e.g. 1000">
+                    <select class="form-select" name="sizeUnit">
+                        <option value="KB">KB</option>
+                        <option value="MB">MB</option>
+                    </select>
+                </div>
+                <small>Max: 25600 KB (25 MB)</small>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Resized Image Name (optional)</label>
+                <input type="text" class="form-control" name="resizedFileName" placeholder="e.g., resized-image.jpeg">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload & Resize</button>
+        </form>
+    </div>
+
+    <div id="downloadSection" class="p-4" style="display: none;">
+        <button id="downloadButton" class="btn btn-success">Download Resized Image</button>
+        <div id="loading" class="loading">
+            <p>⏳ Image is still resizing, please wait...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", () => {
+        let imageId = null;
+        const form = document.getElementById('uploadForm');
+        const alertBox = document.getElementById('alertBox');
+        const downloadSection = document.getElementById('downloadSection');
+        const loading = document.getElementById('loading');
+
+        document.querySelectorAll('input[name="resizeMethod"]').forEach(input => {
+            input.addEventListener('change', function () {
+                const method = this.value;
+                const dimensionInputs = document.querySelectorAll('.dimension-input');
+                const sizeInputs = document.querySelectorAll('.size-input');
+
+                if (method === 'dimension') {
+                    dimensionInputs.forEach(el => el.style.display = 'block');
+                    sizeInputs.forEach(el => el.style.display = 'none');
+                } else {
+                    dimensionInputs.forEach(el => el.style.display = 'none');
+                    sizeInputs.forEach(el => el.style.display = 'block');
+                }
+            });
+        });
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            alertBox.style.display = 'none';
+
+            const method = form.elements["resizeMethod"].value;
+            const fileInput = form.elements["image"];
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showAlert("⚠️ Please select an image to upload.", "warning");
+                return;
+            }
+
+            const maxSizeMB = 25;
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                showAlert(`⚠️ File size must be less than ${maxSizeMB} MB.`, "warning");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("image", file);
+            formData.append("resizedFileName", form.elements["resizedFileName"].value);
+
+            if (method === "dimension") {
+                const width = parseInt(form.elements["width"].value);
+                const height = parseInt(form.elements["height"].value);
+
+                if (isNaN(width) || width < 1 || width > 7680) {
+                    showAlert("⚠️ Width must be between 1 and 7680 pixels. (Only supported upto 8k images)", "warning");
+                    return;
+                }
+
+                if (isNaN(height) || height < 1 || height > 4320) {
+                    showAlert("⚠️ Height must be between 1 and 4320 pixels. (Only supported upto 8k images)", "warning");
+                    return;
+                }
+
+                formData.append("width", width);
+                formData.append("height", height);
+                formData.append("targetImageSize", -1);
+            } else {
+                const targetSize = parseInt(form.elements["targetSize"].value);
+                const sizeUnit = form.elements["sizeUnit"].value;
+
+                if (isNaN(targetSize) || targetSize < 1 || (sizeUnit === "KB" && targetSize > 25600) || (sizeUnit === "MB" && targetSize > 25)) {
+                    showAlert("⚠️ Enter a valid size up to 25600 KB (25 MB).", "warning");
+                    return;
+                }
+
+                const targetSizeKB = sizeUnit === "MB" ? targetSize * 1024 : targetSize;
+                formData.append("width", 1); // dummy
+                formData.append("height", 1); // dummy
+                formData.append("targetImageSize", targetSizeKB);
+            }
+
+            uploadImage(formData);
+        });
+
+        async function uploadImage(formData) {
+            try {
+                document.getElementById("downloadButton").style.display = "none";
+                const response = await fetch('/v1/image/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                let data;
+                const contentType = response.headers.get('Content-Type');
+
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    throw new Error(text || "Unknown error occurred.");
+                }
+
+                if (data && data.id) {
+                    imageId = data.id;
+                    downloadSection.style.display = 'block';
+                    document.getElementById("downloadButton").style.display = 'inline-block';
+                    showAlert("✅ Image uploaded successfully. Ready for download.", "info");
+                } else {
+                    const errorMsg = data?.message || "Upload failed. Please try again.";
+                    showAlert("❌ Upload failed, " + errorMsg, "danger");
+                }
+            } catch (error) {
+                const errorMsg = error.message || "Unknown error.";
+                showAlert("❌ Upload failed, " + errorMsg, "danger");
+            }
+        }
+
+
+        document.getElementById('downloadButton').addEventListener('click', async function () {
+            if (!imageId) {
+                showAlert("⚠️ No image available to download.", "warning");
+                return;
+            }
+
+            const apiKey = 'v0-V9b0iPNXZPhY8K9zDQh4ufL73uSz9sx3MWdnjR4w';
+
+            try {
+                const response = await fetch(`/v1/image/download?id=${imageId}`, {
+                    headers: { 'X-API-Key': apiKey }
+                });
+
+                if (response.status === 404 || response.status === 204) {
+                    showLoading();
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error("Download failed with status: " + response.status);
+                }
+
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = "resized-image.jpg";
+
+                if (contentDisposition && contentDisposition.indexOf('filename=') !== -1) {
+                    const matches = /filename="([^"]+)"/.exec(contentDisposition);
+                    if (matches != null && matches[1]) {
+                        fileName = matches[1];
+                    }
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+
+                document.getElementById("downloadButton").style.display = "none";
+            } catch (error) {
+                showAlert("❌ Download error: " + error.message, "danger");
+            }
+        });
+
+        function showAlert(message, type = "info") {
+            alertBox.className = `alert alert-${type} alert-box`;
+            alertBox.innerText = message;
+            alertBox.style.display = 'block';
+
+                if (type === "danger") {
+                    alertBox.style.color = "#ff4c4c"; // or any red shade you prefer
+                } else {
+                    alertBox.style.color = "#ffffff"; // default for other types
+                }
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+            setTimeout(() => loading.style.display = 'none', 3000);
+        }
+    });
+</script>
+</body>
+</html>

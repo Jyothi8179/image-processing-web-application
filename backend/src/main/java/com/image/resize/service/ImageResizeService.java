@@ -1,6 +1,5 @@
 package com.image.resize.service;
 
-import io.micrometer.common.util.internal.logging.Slf4JLoggerFactory;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -33,7 +32,7 @@ public class ImageResizeService {
     }
 
 
-    public String resizeImage(String originalImagePath, int width, int height, String resizeImageName) throws IOException {
+    public String resizeImage(String originalImagePath, int width, int height, String resizeImageName, int targetImageSize) throws IOException {
         // Ensure output directory exists
 
         logger.info("Image resizing started : "+ originalImagePath);
@@ -66,6 +65,15 @@ public class ImageResizeService {
                 width,
                 height,
                 resizedFilePath);
+
+        if(targetImageSize!=-1){
+            command = String.format("convert %s  -resize %dx%d  -strip  -define jpeg:extent=%dKB  %s",
+                    originalImagePath,
+                    width,
+                    height,
+                    targetImageSize,
+                    resizedFilePath);
+        }
 
         Process process = Runtime.getRuntime().exec(command);
 
