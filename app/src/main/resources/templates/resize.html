@@ -1,70 +1,135 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Image Upload & Download</title>
+    <title>Image Resizer & Converter</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #f4f7fa;
             font-family: 'Roboto', sans-serif;
-            color: #333;
-            padding-top: 50px;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
         }
 
         .container {
-            max-width: 700px;
-            margin: auto;
-            padding: 20px;
-        }
-
-        .card {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            background-color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
             text-align: center;
         }
 
-        .btn-primary, .btn-success {
-            width: 100%;
-            border-radius: 8px;
-            transition: background-color 0.3s ease, transform 0.3s ease;
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        p.text-muted {
+            font-size: 1.1rem;
+            color: #ffffff;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .form-label {
             font-weight: 500;
         }
 
-        .btn-primary:hover {
-            background-color: #004085;
-            transform: translateY(-2px);
+        .form-control,
+        .form-select {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: none;
         }
 
-        .btn-success:hover {
-            background-color: #155724;
-            transform: translateY(-2px);
+        .form-control::placeholder {
+            color: #ddd;
         }
 
-        .loading {
-            display: none;
-            margin-top: 20px;
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #fff;
+            box-shadow: 0 0 5px #fff;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-primary, .btn-success {
+            background-color: #ff6a00;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #fff;
+            transition: 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 106, 0, 0.4);
+        }
+
+        .btn-primary:hover, .btn-success:hover {
+            background-color: #ff7f24;
+            transform: translateY(-4px);
+        }
+
+        .btn:focus {
+            outline: none;
         }
 
         .alert-box {
             display: none;
             margin-bottom: 15px;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #downloadButton {
+            display: none;
+            margin-top: 20px;
+            background-color: #28a745;
+
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="header">
-        <h2>Image Upload & Resize Portal</h2>
-        <p class="text-muted">Resize your image by dimension or target size</p>
+    <div class="header mb-4">
+        <h2>Welcome to the Image Resizer & Converter</h2>
+        <p>Upload an image and resize it by dimensions or target file size.</p>
     </div>
 
     <div id="alertBox" class="alert alert-info alert-box"></div>
 
-    <div class="card shadow p-4 mb-4">
+    <div class="p-4 mb-4 text-start">
         <h5 class="mb-3">Upload Image</h5>
         <form id="uploadForm" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
@@ -105,7 +170,7 @@
                         <option value="MB">MB</option>
                     </select>
                 </div>
-                <small class="text-muted">Max: 25600 KB (25 MB)</small>
+                <small>Max: 25600 KB (25 MB)</small>
             </div>
 
             <div class="mb-3">
@@ -116,7 +181,7 @@
         </form>
     </div>
 
-    <div id="downloadSection" class="card shadow p-4" style="display: none;">
+    <div id="downloadSection" class="p-4" style="display: none;">
         <button id="downloadButton" class="btn btn-success">Download Resized Image</button>
         <div id="loading" class="loading">
             <p>⏳ Image is still resizing, please wait...</p>
@@ -125,6 +190,7 @@
 </div>
 
 <script>
+
     document.addEventListener("DOMContentLoaded", () => {
         let imageId = null;
         const form = document.getElementById('uploadForm');
@@ -176,12 +242,12 @@
                 const height = parseInt(form.elements["height"].value);
 
                 if (isNaN(width) || width < 1 || width > 7680) {
-                    showAlert("⚠️ Width must be between 1 and 7680 pixels.", "warning");
+                    showAlert("⚠️ Width must be between 1 and 7680 pixels. (Only supported upto 8k images)", "warning");
                     return;
                 }
 
                 if (isNaN(height) || height < 1 || height > 4320) {
-                    showAlert("⚠️ Height must be between 1 and 4320 pixels.", "warning");
+                    showAlert("⚠️ Height must be between 1 and 4320 pixels. (Only supported upto 8k images)", "warning");
                     return;
                 }
 
@@ -208,23 +274,37 @@
 
         async function uploadImage(formData) {
             try {
+                document.getElementById("downloadButton").style.display = "none";
                 const response = await fetch('/v1/image/upload', {
                     method: 'POST',
                     body: formData
                 });
 
-                const data = await response.json();
+                let data;
+                const contentType = response.headers.get('Content-Type');
+
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    throw new Error(text || "Unknown error occurred.");
+                }
+
                 if (data && data.id) {
                     imageId = data.id;
                     downloadSection.style.display = 'block';
+                    document.getElementById("downloadButton").style.display = 'inline-block';
                     showAlert("✅ Image uploaded successfully. Ready for download.", "info");
                 } else {
-                    showAlert("❌ Upload failed. Please try again.", "danger");
+                    const errorMsg = data?.message || "Upload failed. Please try again.";
+                    showAlert("❌ Upload failed, " + errorMsg, "danger");
                 }
             } catch (error) {
-                showAlert("❌ Upload failed. Please try again: " + error.message, "danger");
+                const errorMsg = error.message || "Unknown error.";
+                showAlert("❌ Upload failed, " + errorMsg, "danger");
             }
         }
+
 
         document.getElementById('downloadButton').addEventListener('click', async function () {
             if (!imageId) {
@@ -266,6 +346,8 @@
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
+
+                document.getElementById("downloadButton").style.display = "none";
             } catch (error) {
                 showAlert("❌ Download error: " + error.message, "danger");
             }
@@ -275,6 +357,12 @@
             alertBox.className = `alert alert-${type} alert-box`;
             alertBox.innerText = message;
             alertBox.style.display = 'block';
+
+                if (type === "danger") {
+                    alertBox.style.color = "#ff4c4c"; // or any red shade you prefer
+                } else {
+                    alertBox.style.color = "#ffffff"; // default for other types
+                }
         }
 
         function showLoading() {
