@@ -1,6 +1,7 @@
 package com.app.service;
 
 import com.image.processing.repository.ImageRepository;
+import com.image.processing.service.ImageService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -27,8 +28,11 @@ public class SelfPingService {
     @Value("${cleanup.resized.dir}")
     private String resizedDir;
 
-    @Value("${cleanup.interval.miliseconds}")
+    @Value("${cleanup.files.interval.miliseconds}")
     private final String cleanupInterval = "21600000";
+
+    @Value("${cleanup.ip.history.miliseconds}")
+    private final String ipCleanUpInterval = "86400000";
 
     Logger logger = LoggerFactory.getLogger(SelfPingService.class);
 
@@ -43,7 +47,8 @@ public class SelfPingService {
 
     }
     @Autowired CleanUpService cleanUpService;
-    @Autowired ImageRepository imageRepository;
+    @Autowired ImageService imageService;
+    @Autowired UserDataService userDataService;
 
     @Scheduled(fixedRate = 45_000)
     public void pingMyself() {
@@ -63,9 +68,17 @@ public class SelfPingService {
         cleanUpService.deleteFilesInDirectory(resizedDir);
 
         logger.info("Cleaning up Image table...");
-        imageRepository.deleteAll();
+        imageService.deleteAll();
         logger.info("Cleanup complete.");
         logger.info("------------------------  [CleanUp] finished  ------------------------  ");
+
+    }
+
+    @Scheduled(fixedRateString = ipCleanUpInterval)
+    public void restoreIpRestriction(){
+        logger.info("------------------------  [CleanUp] Ip history restoring  ------------------------  ");
+        userDataService.deleteAll();
+        logger.info("------------------------  [CleanUp] Ip history restored  ------------------------  ");
 
     }
 }

@@ -1,9 +1,13 @@
 package com.image.processing.controller;
 
+import com.app.entity.UserData;
+import com.app.service.UserDataService;
 import com.image.processing.entity.Image;
 import com.image.processing.service.ImageConvertorService;
 import com.image.processing.utils.ImageProcessingUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +25,8 @@ import java.util.Map;
 public class ImageConvertorController {
 
 
+    @Value("${rate.limit}")
+    String limit;
 
     private static final long MAX_FILE_SIZE = 25 * 1000000; // 25MB
     public static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads";
@@ -29,11 +35,21 @@ public class ImageConvertorController {
     private static final int MAX_HEIGHT = 4320;
 
     @Autowired ImageConvertorService imageConvertorService;
+    @Autowired UserDataService userDataService;
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadImage(
             @RequestParam("image") MultipartFile file,
-            @RequestParam(value = "targetFileName", required = false) String targetFileName) {
+            @RequestParam(value = "targetFileName", required = false) String targetFileName,
+            HttpServletRequest request) {
+
+        String ip = getClientIp(request);
+        UserData userData = userDataService.getUserData(ip);
+        if(userData!=null && userData.getCount() >= Integer.parseInt(limit)){
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Maximum upload limit is : ".concat(String.valueOf(limit)));
+        }else{
+            userDataService.save(ip);
+        }
 
         try {
             // Validate file size
@@ -70,5 +86,24 @@ public class ImageConvertorController {
 
     }
 
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+            // X-Forwarded-For may contain multiple IPs, take the first
+            return ip.split(",")[0];
+        }
+
+        ip = request.getHeader("Proxy-Client-IP");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+            return ip;
+        }
+
+        ip = request.getHeader("WL-Proxy-Client-IP");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+            return ip;
+        }
+
+        return request.getRemoteAddr();
+    }
 
 }

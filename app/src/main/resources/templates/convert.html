@@ -1,155 +1,132 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
-    <title>Image Format Converter</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Image Converter</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #6a11cb, #2575fc);
-            color: #fff;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+          margin: 0;
+          padding: 0;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
         }
 
         .container {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 40px;
-            max-width: 700px;
-            width: 100%;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+          background-color: white;
+          padding: 40px;
+          border-radius: 16px;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+          text-align: center;
+          width: 100%;
+          max-width: 450px;
         }
 
         h2 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            letter-spacing: 1px;
-        }
-
-        p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-bottom: 30px;
+          color: #6c5ce7;
+          margin-bottom: 24px;
         }
 
         label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 1rem;
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          color: #333;
+          text-align: left;
         }
 
         input[type="file"],
         select,
         input[type="text"] {
-            width: 100%;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 1rem;
-            outline: none;
+          width: 100%;
+          padding: 12px;
+          background-color: #ece9ff;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          color: #333;
+          margin-bottom: 20px;
+          box-sizing: border-box;
         }
 
-        .button {
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            background-color: #ff6a00;
-            color: #fff;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(255, 106, 0, 0.4);
-            margin-top: 10px;
+        input[type="file"]::file-selector-button {
+          background: #6c5ce7;
+          color: white;
+          padding: 10px 16px;
+          border: none;
+          border-radius: 6px;
+          font-weight: 500;
+          margin-right: 12px;
+          cursor: pointer;
         }
 
-        .button:hover {
-            background-color: #ff7f24;
-            transform: translateY(-4px);
+        button {
+          background-color: #6c5ce7;
+          color: white;
+          padding: 12px 20px;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+          margin-top: 10px;
         }
 
-        .button:active {
-            background-color: #e65c00;
-            transform: translateY(0);
+        button:hover {
+          background-color: #5a4dcf;
         }
 
-        #downloadBtn {
-            display: none;
-            margin-top: 20px;
-            background-color: #28a745;
-
+        #convertForm > button {
+            align-self: center; /* Ensures button is centered */
         }
 
         .alert-box {
-            display: none;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: 500;
+          margin-top: 20px;
+          padding: 12px;
+          border-radius: 8px;
+          display: none;
         }
 
-        .alert-info { background-color: #17a2b8; color: #fff; }
-        .alert-warning { background-color: #ffc107; color: #000; }
-        .alert-danger { background-color: #dc3545; color: #fff; }
-        .alert-success { background-color: #28a745; color: #fff; }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 30px;
-            }
-
-            h2 {
-                font-size: 2rem;
-            }
-
-            .button {
-                font-size: 1rem;
-            }
-        }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-warning { background-color: #fff3cd; color: #856404; }
+        .alert-danger  { background-color: #f8d7da; color: #721c24; }
+        .alert-info    { background-color: #d1ecf1; color: #0c5460; }
     </style>
 </head>
 <body>
+
 <div class="container">
-    <h2>Image Format Converter</h2>
-    <p>Convert your image to JPG, PNG, PDF, and more</p>
+    <h2>Image Converter</h2>
+    <form id="convertForm">
+        <label for="imageInput">Select Image</label>
+        <input type="file" id="imageInput" name="image" required />
 
-    <div id="alertBox" class="alert-box"></div>
-
-    <form id="convertForm" method="POST" enctype="multipart/form-data">
-        <label>Select Image</label>
-        <input type="file" name="image" required accept="image/*">
-
-        <label>Target Format</label>
-        <select id="formatSelect" required>
-            <option value="">Select format</option>
-            <option value="jpg">JPG</option>
+        <label for="formatSelect">Convert To Format</label>
+        <select id="formatSelect" name="format" required>
+            <option value="jpeg">JPEG</option>
             <option value="png">PNG</option>
             <option value="webp">WEBP</option>
+            <option value="bmp">BMP</option>
+            <option value="tiff">TIFF</option>
             <option value="pdf">PDF</option>
         </select>
 
-        <label>Converted File Name (optional)</label>
-        <input type="text" id="convertedFileName" placeholder="e.g., my-converted-image.pdf">
+        <label for="convertedFileName">Output File Name (Optional)</label>
+        <input type="text" id="convertedFileName" name="filename" placeholder="e.g. converted_image" />
 
-        <button type="submit" class="button">Convert Image</button>
+        <button type="submit">Convert</button>
     </form>
 
-    <button id="downloadBtn" class="button">Download Converted File</button>
+    <div style="text-align: center; margin-top: 16px;">
+        <button id="downloadBtn" style="display: none;">Download Converted Image</button>
+    </div>
+    <div id="alertBox" class="alert-box"></div>
 </div>
 
 <script>
@@ -160,8 +137,6 @@
         const file = this.elements["image"].files[0];
         const format = document.getElementById("formatSelect").value;
         let fileName = document.getElementById("convertedFileName").value.trim();
-
-
 
         if (!file || !format) {
             showAlert("⚠️ Please select an image and target format.", "warning");
@@ -206,11 +181,11 @@
     });
 
     document.getElementById("downloadBtn").addEventListener("click", async () => {
-    if (!convertedId) return;
+      if (!convertedId) return;
 
-    const apiKey = 'v0-V9b0iPNXZPhY8K9zDQh4ufL73uSz9sx3MWdnjR4w';
+      const apiKey = 'v0-V9b0iPNXZPhY8K9zDQh4ufL73uSz9sx3MWdnjR4w';
 
-    try {
+      try {
         const res = await fetch(`/v1/image/download?id=${convertedId}`, {
             headers: {
                 'X-API-Key': apiKey
@@ -239,14 +214,12 @@
         a.click();
         a.remove();
 
-        // Hides the download button after download
         document.getElementById("downloadBtn").style.display = "none";
 
-    } catch (err) {
+      } catch (err) {
         showAlert("❌ Download failed: " + err.message, "danger");
-    }
-});
-
+      }
+    });
 
     function showAlert(message, type = "info") {
         const alertBox = document.getElementById("alertBox");

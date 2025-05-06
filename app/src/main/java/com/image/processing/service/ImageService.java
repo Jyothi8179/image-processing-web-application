@@ -120,4 +120,8 @@ public class ImageService {
             logger.error("ExceptionOccured while resizing image : "+ e.getCause()+", "+e.getMessage());
         }
     }
+
+    public void deleteAll(){
+        imageRepository.deleteAll();
+    }
 }

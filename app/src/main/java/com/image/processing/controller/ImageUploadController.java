@@ -1,11 +1,14 @@
 package com.image.processing.controller;
 
+import com.app.entity.UserData;
 import com.app.service.SelfPingService;
+import com.app.service.UserDataService;
 import com.image.processing.entity.Image;
 import com.image.processing.service.ImageService;
 
 import com.image.processing.utils.ImageProcessingUtils;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Max;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +48,13 @@ public class ImageUploadController {
     @Value("${auth.cleanup.token}")
     String expectedToken;
 
+    @Value("${rate.limit}")
+    String limit;
+
     Logger logger = LoggerFactory.getLogger(ImageUploadController.class);
     @Autowired ImageService imageService;
     @Autowired SelfPingService selfPingService;
+    @Autowired UserDataService userDataService;
 
 
 
@@ -77,7 +84,16 @@ public class ImageUploadController {
             @RequestParam("width")@Validated @Min(1) @Max(7680) int width,
             @RequestParam("height") @Validated @Min(1) @Max(4320) int height,
             @RequestParam(value = "targetImageSize", defaultValue = "-1") int  targetImageSize,
-            @RequestParam(value = "resizedFileName", required = false) String resizedFileName) {
+            @RequestParam(value = "resizedFileName", required = false) String resizedFileName,
+            HttpServletRequest request) {
+
+        String ip = getClientIp(request);
+        UserData userData = userDataService.getUserData(ip);
+        if(userData!=null && userData.getCount() >= Integer.parseInt(limit)){
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Maximum upload limit is : ".concat(String.valueOf(limit)));
+        }else{
+            userDataService.save(ip);
+        }
 
         try {
             // Validate file size
@@ -111,6 +127,26 @@ public class ImageUploadController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error : " + e.getMessage());
         }
 
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+            // X-Forwarded-For may contain multiple IPs, take the first
+            return ip.split(",")[0];
+        }
+
+        ip = request.getHeader("Proxy-Client-IP");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+            return ip;
+        }
+
+        ip = request.getHeader("WL-Proxy-Client-IP");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+            return ip;
+        }
+
+        return request.getRemoteAddr();
     }
 
     @GetMapping("/download")

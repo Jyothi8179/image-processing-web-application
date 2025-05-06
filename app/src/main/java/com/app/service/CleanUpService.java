@@ -29,4 +29,8 @@ public class CleanUpService {
             e.printStackTrace();
         }
     }
+
+    protected void cleanIpHistory(){
+
+    }
 }

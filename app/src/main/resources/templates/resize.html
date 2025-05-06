@@ -290,15 +290,35 @@
                     throw new Error(text || "Unknown error occurred.");
                 }
 
-                if (data && data.id) {
-                    imageId = data.id;
-                    downloadSection.style.display = 'block';
-                    document.getElementById("downloadButton").style.display = 'inline-block';
-                    showAlert("✅ Image uploaded successfully. Ready for download.", "info");
-                } else {
-                    const errorMsg = data?.message || "Upload failed. Please try again.";
-                    showAlert("❌ Upload failed, " + errorMsg, "danger");
-                }
+<!--                if (data && data.id) {-->
+<!--                    imageId = data.id;-->
+<!--                    downloadSection.style.display = 'block';-->
+<!--                    document.getElementById("downloadButton").style.display = 'inline-block';-->
+<!--                    showAlert("✅ Image uploaded successfully. Ready for download.", "info");-->
+<!--                } else {-->
+<!--                    const errorMsg = data?.message || "Upload failed. Please try again.";-->
+<!--                    showAlert("❌ Upload failed, " + errorMsg, "danger");-->
+<!--                }-->
+                    if (response.status === 429) {
+                        const text = await response.text();
+                        showAlert("❌ " + text, "danger");
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || "Upload failed.");
+                    }
+
+                    if (data && data.id) {
+                        imageId = data.id;
+                        downloadSection.style.display = 'block';
+                        document.getElementById("downloadButton").style.display = 'inline-block';
+                        showAlert("✅ Image uploaded successfully. Ready for download.", "info");
+                    } else {
+                        const errorMsg = data?.message || "Upload failed. Please try again.";
+                        showAlert("❌ Upload failed, " + errorMsg, "danger");
+                    }
             } catch (error) {
                 const errorMsg = error.message || "Unknown error.";
                 showAlert("❌ Upload failed, " + errorMsg, "danger");
